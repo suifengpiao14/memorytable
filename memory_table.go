@@ -10,6 +10,10 @@ var Error_RecordNotFound = errors.New("record not found")
 
 type TableRows[T any] []T
 
+func NewTableRows[T any](records ...T) TableRows[T] {
+	return records
+}
+
 func (records TableRows[T]) Uniqueue(keyFn func(row T) (key string)) []T {
 	var result []T
 	m := make(map[string]struct{})
