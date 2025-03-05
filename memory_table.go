@@ -1,6 +1,7 @@
 package memorytable
 
 import (
+	"encoding/json"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -25,6 +26,30 @@ func (records TableRows[T]) Uniqueue(keyFn func(row T) (key string)) []T {
 		}
 	}
 	return result
+}
+func (records TableRows[T]) Sum(sumFn func(row T) (number int64)) (sum int64) {
+	for _, v := range records {
+		sum += sumFn(v)
+	}
+	return sum
+}
+func (records TableRows[T]) Json() (s string, err error) {
+	b, err := json.Marshal(records)
+	if err != nil {
+		return "", err
+	}
+	s = string(b)
+	return s, nil
+}
+
+func (records TableRows[T]) JsonMust() (s string) {
+	b, err := json.Marshal(records)
+	if err != nil {
+		err = errors.WithMessagef(err, "json marshal error  TableRows[T]) JsonMust()")
+		panic(err)
+	}
+	s = string(b)
+	return s
 }
 
 func (records TableRows[T]) GroupBy(groupValue func(row T) (key string)) map[string][]T {
@@ -158,4 +183,19 @@ func (records RecordsColumn[T, V]) Map(fn func(one T) (value V)) (values []V) {
 		values = append(values, fn(v))
 	}
 	return values
+}
+
+func Column[T, V any](records []T, fn func(row T) (value V)) []V {
+	var result []V
+	for _, row := range records {
+		result = append(result, fn(row))
+	}
+	return result
+}
+func Map[T, V any](records []T, fn func(row T) (value V)) []V {
+	var result []V
+	for _, row := range records {
+		result = append(result, fn(row))
+	}
+	return result
 }
