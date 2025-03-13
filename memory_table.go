@@ -72,6 +72,14 @@ func (records TableRows[T]) Contains(v T) bool {
 	}
 	return false
 }
+func (records TableRows[T]) ContainsWithFunc(comparedFn func(one T) bool) bool {
+	for _, v := range records {
+		if comparedFn(v) {
+			return true
+		}
+	}
+	return false
+}
 
 func (records TableRows[T]) First() (first *T, exists bool) {
 	if len(records) == 0 {
