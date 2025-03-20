@@ -15,6 +15,72 @@ func NewTableRows[T any](records ...T) TableRows[T] {
 	return records
 }
 
+func (records TableRows[T]) Len() int {
+	return len(records)
+}
+
+// Intersection 返回两个集合的交集
+func (records TableRows[T]) Intersection(seconds TableRows[T], identityFn func(row T) string) TableRows[T] {
+	secondMap := seconds.Map(identityFn)
+	var result []T
+	for _, v := range records {
+		key := identityFn(v)
+		if _, ok := secondMap[key]; ok {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+func (records TableRows[T]) Diff(subtrahend TableRows[T], identityFn func(row T) string) TableRows[T] {
+	secondMap := make(map[string]struct{})
+	for _, v := range subtrahend {
+		key := identityFn(v)
+		secondMap[key] = struct{}{}
+	}
+	var result []T
+	for _, v := range records {
+		key := identityFn(v)
+		if _, ok := secondMap[key]; !ok {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+func (records TableRows[T]) Map(identityFn func(row T) string) map[string]T {
+	m := make(map[string]T)
+	for _, v := range records {
+		m[identityFn(v)] = v
+	}
+	return m
+}
+func (records TableRows[T]) HasDiff(subtrahend TableRows[T], identityFn func(row T) string) bool {
+	secondMap := subtrahend.Map(identityFn)
+	for _, v := range records {
+		key := identityFn(v)
+		if _, ok := secondMap[key]; !ok {
+			return true
+		}
+	}
+	return false
+}
+func (records TableRows[T]) HasIntersection(seconds TableRows[T], identityFn func(row T) string) bool {
+	secondMap := seconds.Map(identityFn)
+	for _, v := range records {
+		key := identityFn(v)
+		if _, ok := secondMap[key]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// IsSubsetTo 判断records是否为fullSet的子集
+func (records TableRows[T]) IsSubsetTo(fullSet TableRows[T], identityFn func(row T) string) bool {
+	inter := records.Intersection(fullSet, identityFn)
+	ok := len(inter) == len(records)
+	return ok
+}
+
 func (records TableRows[T]) Uniqueue(keyFn func(row T) (key string)) []T {
 	var result []T
 	m := make(map[string]struct{})
