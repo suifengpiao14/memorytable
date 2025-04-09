@@ -19,13 +19,12 @@ func (records TableRows[T]) Len() int {
 	return len(records)
 }
 
-func (records TableRows[T]) Rows() []T {
+func (records TableRows[T]) ToSlice() []T {
 	return records
 }
 
-// Merge 根据唯一标识合并多个表记录,不保证原始记录的顺序, 但保证唯一性。
-
-func (records TableRows[T]) Merge(identityFn func(t T) (identity string), moreTableRows ...TableRows[T]) (merged TableRows[T]) {
+// Set 存在则更新，不存在则插入
+func (records TableRows[T]) Set(identityFn func(t T) (identity string), moreTableRows ...TableRows[T]) (merged TableRows[T]) {
 	m := records.Map(identityFn)
 	for _, more := range moreTableRows {
 		for _, v := range more {
@@ -42,11 +41,29 @@ func (records TableRows[T]) Merge(identityFn func(t T) (identity string), moreTa
 	return records
 }
 
-func (records TableRows[T]) InitByIdentities(initFn func(identity string) (record T), identities ...string) (initedRows TableRows[T]) {
+// Insert 批量生成记录
+func (records TableRows[T]) Insert(identities []string, initFn func(identity string) (record T)) (initedRows TableRows[T]) {
 	initedRows = Map(identities, func(identity string) (record T) {
 		return initFn(identity)
 	})
 	return initedRows
+}
+
+// Update  覆盖记录，如果存在则用新的值替换旧的。可以和Insert 结合使用，快速从全局数据中筛选部分子数据，同时保留不在全局数据内的记录。(如权限包中根据总权限回复指定部分权限数据，并保证全部记录能回复)
+func (records TableRows[T]) Update(identityFn func(t T) (identity string), valueTableRows ...T) TableRows[T] {
+	m := make(map[string]T)
+	for _, v := range valueTableRows {
+		m[identityFn(v)] = v
+	}
+
+	for i := range records {
+		identity := identityFn(records[i])
+		if v, ok := m[identity]; ok {
+			records[i] = v
+		}
+
+	}
+	return records
 }
 
 // Intersection 返回两个集合的交集
