@@ -23,6 +23,32 @@ func (records TableRows[T]) Rows() []T {
 	return records
 }
 
+// Merge 根据唯一标识合并多个表记录,不保证原始记录的顺序, 但保证唯一性。
+
+func (records TableRows[T]) Merge(identityFn func(t T) (identity string), moreTableRows ...TableRows[T]) (merged TableRows[T]) {
+	m := records.Map(identityFn)
+	for _, more := range moreTableRows {
+		for _, v := range more {
+			key := identityFn(v)
+			m[key] = v
+		}
+	}
+	merged = make([]T, 0, len(m))
+	i := 0
+	for _, v := range m {
+		merged[i] = v
+		i++
+	}
+	return records
+}
+
+func (records TableRows[T]) InitByIdentities(initFn func(identity string) (record T), identities ...string) (initedRows TableRows[T]) {
+	initedRows = Map(identities, func(identity string) (record T) {
+		return initFn(identity)
+	})
+	return initedRows
+}
+
 // Intersection 返回两个集合的交集
 func (records TableRows[T]) Intersection(seconds TableRows[T], identityFn func(row T) string) TableRows[T] {
 	secondMap := seconds.Map(identityFn)
