@@ -19,6 +19,10 @@ func (records TableRows[T]) Len() int {
 	return len(records)
 }
 
+func (records TableRows[T]) Rows() []T {
+	return records
+}
+
 // Intersection 返回两个集合的交集
 func (records TableRows[T]) Intersection(seconds TableRows[T], identityFn func(row T) string) TableRows[T] {
 	secondMap := seconds.Map(identityFn)
