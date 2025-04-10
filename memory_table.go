@@ -196,13 +196,20 @@ func (records Table[T]) Contains(v T) bool {
 	}
 	return false
 }
+
+func (records Table[T]) ContainsFunc(comparedFn func(one T) bool) bool {
+	return slices.ContainsFunc(records, comparedFn)
+
+}
+
+// Deprecated: use ContainsFunc instead
 func (records Table[T]) ContainsWithFunc(comparedFn func(one T) bool) bool {
-	for _, v := range records {
-		if comparedFn(v) {
-			return true
-		}
-	}
-	return false
+	// for _, v := range records {
+	// 	if comparedFn(v) {
+	// 		return true
+	// 	}
+	// }
+	return records.ContainsFunc(comparedFn)
 }
 
 func (records Table[T]) First() (first *T, exists bool) {
