@@ -3,28 +3,34 @@ package memorytable
 import (
 	"encoding/json"
 	"reflect"
+	"slices"
 
 	"github.com/pkg/errors"
 )
 
 var Error_RecordNotFound = errors.New("record not found")
 
-type TableRows[T any] []T
+type Table[T any] []T
 
-func NewTableRows[T any](records ...T) TableRows[T] {
+// Deprecated: 请使用 NewTable
+func NewTableRows[T any](records ...T) Table[T] {
 	return records
 }
 
-func (records TableRows[T]) Len() int {
+func NewTable[T any](records ...T) Table[T] {
+	return records
+}
+
+func (records Table[T]) Count() int {
 	return len(records)
 }
 
-func (records TableRows[T]) ToSlice() []T {
+func (records Table[T]) ToSlice() []T {
 	return records
 }
 
 // Set 存在则更新，不存在则插入
-func (records TableRows[T]) Set(identityFn func(t T) (identity string), moreTableRows ...TableRows[T]) (merged TableRows[T]) {
+func (records Table[T]) Set(identityFn func(t T) (identity string), moreTableRows ...Table[T]) (merged Table[T]) {
 	m := records.Map(identityFn)
 	for _, more := range moreTableRows {
 		for _, v := range more {
@@ -42,7 +48,7 @@ func (records TableRows[T]) Set(identityFn func(t T) (identity string), moreTabl
 }
 
 // Insert 批量生成记录
-func (records TableRows[T]) Insert(identities []string, initFn func(identity string) (record T)) (initedRows TableRows[T]) {
+func (records Table[T]) Insert(identities []string, initFn func(identity string) (record T)) (initedRows Table[T]) {
 	initedRows = Map(identities, func(identity string) (record T) {
 		return initFn(identity)
 	})
@@ -50,7 +56,7 @@ func (records TableRows[T]) Insert(identities []string, initFn func(identity str
 }
 
 // Update  覆盖记录，如果存在则用新的值替换旧的。可以和Insert 结合使用，快速从全局数据中筛选部分子数据，同时保留不在全局数据内的记录。(如权限包中根据总权限回复指定部分权限数据，并保证全部记录能回复)
-func (records TableRows[T]) Update(identityFn func(t T) (identity string), valueTableRows ...T) TableRows[T] {
+func (records Table[T]) Update(identityFn func(t T) (identity string), valueTableRows ...T) Table[T] {
 	m := make(map[string]T)
 	for _, v := range valueTableRows {
 		m[identityFn(v)] = v
@@ -67,7 +73,7 @@ func (records TableRows[T]) Update(identityFn func(t T) (identity string), value
 }
 
 // Intersection 返回两个集合的交集
-func (records TableRows[T]) Intersection(seconds TableRows[T], identityFn func(row T) string) TableRows[T] {
+func (records Table[T]) Intersection(seconds Table[T], identityFn func(row T) string) Table[T] {
 	secondMap := seconds.Map(identityFn)
 	var result []T
 	for _, v := range records {
@@ -78,7 +84,7 @@ func (records TableRows[T]) Intersection(seconds TableRows[T], identityFn func(r
 	}
 	return result
 }
-func (records TableRows[T]) Diff(subtrahend TableRows[T], identityFn func(row T) string) TableRows[T] {
+func (records Table[T]) Diff(subtrahend Table[T], identityFn func(row T) string) Table[T] {
 	secondMap := make(map[string]struct{})
 	for _, v := range subtrahend {
 		key := identityFn(v)
@@ -93,14 +99,14 @@ func (records TableRows[T]) Diff(subtrahend TableRows[T], identityFn func(row T)
 	}
 	return result
 }
-func (records TableRows[T]) Map(identityFn func(row T) string) map[string]T {
+func (records Table[T]) Map(identityFn func(row T) string) map[string]T {
 	m := make(map[string]T)
 	for _, v := range records {
 		m[identityFn(v)] = v
 	}
 	return m
 }
-func (records TableRows[T]) HasDiff(subtrahend TableRows[T], identityFn func(row T) string) bool {
+func (records Table[T]) HasDiff(subtrahend Table[T], identityFn func(row T) string) bool {
 	secondMap := subtrahend.Map(identityFn)
 	for _, v := range records {
 		key := identityFn(v)
@@ -110,7 +116,7 @@ func (records TableRows[T]) HasDiff(subtrahend TableRows[T], identityFn func(row
 	}
 	return false
 }
-func (records TableRows[T]) HasIntersection(seconds TableRows[T], identityFn func(row T) string) bool {
+func (records Table[T]) HasIntersection(seconds Table[T], identityFn func(row T) string) bool {
 	secondMap := seconds.Map(identityFn)
 	for _, v := range records {
 		key := identityFn(v)
@@ -122,13 +128,13 @@ func (records TableRows[T]) HasIntersection(seconds TableRows[T], identityFn fun
 }
 
 // IsSubsetTo 判断records是否为fullSet的子集
-func (records TableRows[T]) IsSubsetTo(fullSet TableRows[T], identityFn func(row T) string) bool {
+func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) string) bool {
 	inter := records.Intersection(fullSet, identityFn)
 	ok := len(inter) == len(records)
 	return ok
 }
 
-func (records TableRows[T]) Uniqueue(keyFn func(row T) (key string)) []T {
+func (records Table[T]) Uniqueue(keyFn func(row T) (key string)) []T {
 	var result []T
 	m := make(map[string]struct{})
 	for _, v := range records {
@@ -140,13 +146,13 @@ func (records TableRows[T]) Uniqueue(keyFn func(row T) (key string)) []T {
 	}
 	return result
 }
-func (records TableRows[T]) Sum(sumFn func(row T) (number int64)) (sum int64) {
+func (records Table[T]) Sum(sumFn func(row T) (number int64)) (sum int64) {
 	for _, v := range records {
 		sum += sumFn(v)
 	}
 	return sum
 }
-func (records TableRows[T]) Json() (s string, err error) {
+func (records Table[T]) Json() (s string, err error) {
 	b, err := json.Marshal(records)
 	if err != nil {
 		return "", err
@@ -155,7 +161,7 @@ func (records TableRows[T]) Json() (s string, err error) {
 	return s, nil
 }
 
-func (records TableRows[T]) JsonMust() (s string) {
+func (records Table[T]) JsonMust() (s string) {
 	b, err := json.Marshal(records)
 	if err != nil {
 		err = errors.WithMessagef(err, "json marshal error  TableRows[T]) JsonMust()")
@@ -165,7 +171,7 @@ func (records TableRows[T]) JsonMust() (s string) {
 	return s
 }
 
-func (records TableRows[T]) GroupBy(groupValue func(row T) (key string)) map[string][]T {
+func (records Table[T]) GroupBy(groupValue func(row T) (key string)) map[string][]T {
 	m := make(map[string][]T)
 	for _, v := range records {
 		groupVal := groupValue(v)
@@ -177,7 +183,12 @@ func (records TableRows[T]) GroupBy(groupValue func(row T) (key string)) map[str
 	return m
 }
 
-func (records TableRows[T]) Contains(v T) bool {
+func (records Table[T]) OrderBy(orderBy func(a, b T) (order int)) Table[T] {
+	slices.SortFunc(records, orderBy)
+	return records
+}
+
+func (records Table[T]) Contains(v T) bool {
 	for _, v2 := range records {
 		if reflect.DeepEqual(v, v2) {
 			return true
@@ -185,7 +196,7 @@ func (records TableRows[T]) Contains(v T) bool {
 	}
 	return false
 }
-func (records TableRows[T]) ContainsWithFunc(comparedFn func(one T) bool) bool {
+func (records Table[T]) ContainsWithFunc(comparedFn func(one T) bool) bool {
 	for _, v := range records {
 		if comparedFn(v) {
 			return true
@@ -194,21 +205,21 @@ func (records TableRows[T]) ContainsWithFunc(comparedFn func(one T) bool) bool {
 	return false
 }
 
-func (records TableRows[T]) First() (first *T, exists bool) {
+func (records Table[T]) First() (first *T, exists bool) {
 	if len(records) == 0 {
 		return nil, false
 	}
 	return &records[0], true
 }
 
-func (records TableRows[T]) FirstWithDefault() (first T) {
+func (records Table[T]) FirstWithDefault() (first T) {
 	if len(records) == 0 {
 		return *new(T)
 	}
 	return records[0]
 }
 
-func (records TableRows[T]) GetOne(fn func(row T) bool) (row *T, exists bool) {
+func (records Table[T]) GetOne(fn func(row T) bool) (row *T, exists bool) {
 	for _, r := range records {
 		if fn(r) {
 			return &r, true
@@ -216,7 +227,7 @@ func (records TableRows[T]) GetOne(fn func(row T) bool) (row *T, exists bool) {
 	}
 	return nil, false
 }
-func (records TableRows[T]) GetOneWithError(fn func(row T) bool) (row *T, err error) {
+func (records Table[T]) GetOneWithError(fn func(row T) bool) (row *T, err error) {
 	for _, r := range records {
 		if fn(r) {
 			return &r, nil
@@ -226,7 +237,7 @@ func (records TableRows[T]) GetOneWithError(fn func(row T) bool) (row *T, err er
 	return nil, err
 }
 
-func (records TableRows[T]) GetOneWithDefault(fn func(row T) bool) (row T) {
+func (records Table[T]) GetOneWithDefault(fn func(row T) bool) (row T) {
 	for _, r := range records {
 		if fn(r) {
 			return r
@@ -235,11 +246,11 @@ func (records TableRows[T]) GetOneWithDefault(fn func(row T) bool) (row T) {
 	return *new(T)
 }
 
-func (records TableRows[T]) IsEmpty() (yes bool) {
+func (records Table[T]) IsEmpty() (yes bool) {
 	return len(records) == 0
 }
 
-func (records TableRows[T]) Filter(fn func(one T) bool) (sub []T) {
+func (records Table[T]) Where(fn func(record T) bool) (sub []T) {
 	sub = make([]T, 0)
 	for _, v := range records {
 		if fn(v) {
@@ -249,7 +260,12 @@ func (records TableRows[T]) Filter(fn func(one T) bool) (sub []T) {
 	return sub
 }
 
-func (records TableRows[T]) FilterEmpty() []T {
+// Deprecated: Use Where instead.
+func (records Table[T]) Filter(fn func(record T) bool) (sub []T) {
+	return records.Where(fn)
+}
+
+func (records Table[T]) FilterEmpty() []T {
 	return records.Filter(func(one T) bool {
 		switch v := any(one).(type) {
 		case string, *string:
@@ -270,7 +286,7 @@ func (records TableRows[T]) FilterEmpty() []T {
 	})
 }
 
-func (records TableRows[T]) Walk(fn func(one *T, index int) (err error)) (err error) {
+func (records Table[T]) Walk(fn func(one *T, index int) (err error)) (err error) {
 	for i := 0; i < len(records); i++ {
 		if err = fn(&records[i], i); err != nil {
 			return err
@@ -279,7 +295,7 @@ func (records TableRows[T]) Walk(fn func(one *T, index int) (err error)) (err er
 	return nil
 }
 
-func (records TableRows[T]) Reverse(arr []T) (reversed []T) {
+func (records Table[T]) Reverse(arr []T) (reversed []T) {
 	reversed = make([]T, 0)
 	for i := len(arr) - 1; i >= 0; i-- {
 		reversed = append(reversed, arr[i])
