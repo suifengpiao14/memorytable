@@ -99,12 +99,17 @@ func (records Table[T]) Diff(subtrahend Table[T], identityFn func(row T) string)
 	}
 	return result
 }
-func (records Table[T]) Map(identityFn func(row T) string) map[string]T {
+func (records Table[T]) Index(identityFn func(row T) string) map[string]T {
 	m := make(map[string]T)
 	for _, v := range records {
 		m[identityFn(v)] = v
 	}
 	return m
+}
+
+// Deprecated: 请使用 Index
+func (records Table[T]) Map(identityFn func(row T) string) map[string]T {
+	return records.Index(identityFn)
 }
 func (records Table[T]) HasDiff(subtrahend Table[T], identityFn func(row T) string) bool {
 	secondMap := subtrahend.Map(identityFn)
