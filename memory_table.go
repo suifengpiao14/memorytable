@@ -30,21 +30,19 @@ func (records Table[T]) ToSlice() []T {
 }
 
 // Set 存在则更新，不存在则插入
-func (records Table[T]) Set(identityFn func(t T) (identity string), moreTableRows ...Table[T]) (merged Table[T]) {
+func (records Table[T]) Set(identityFn func(t T) (identity string), moreTableRows ...T) (merged Table[T]) {
 	m := records.Map(identityFn)
-	for _, more := range moreTableRows {
-		for _, v := range more {
-			key := identityFn(v)
-			m[key] = v
-		}
+	for _, v := range moreTableRows {
+		key := identityFn(v)
+		m[key] = v
 	}
-	merged = make([]T, 0, len(m))
+	merged = make([]T, len(m))
 	i := 0
 	for _, v := range m {
 		merged[i] = v
 		i++
 	}
-	return records
+	return merged
 }
 
 // Insert 批量生成记录
