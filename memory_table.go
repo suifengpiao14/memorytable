@@ -46,11 +46,11 @@ func (records Table[T]) Set(identityFn func(t T) (identity string), moreTableRow
 }
 
 // Insert 批量生成记录
-func (records Table[T]) Insert(identities []string, initFn func(identity string) (record T)) (initedRows Table[T]) {
-	initedRows = Map(identities, func(identity string) (record T) {
-		return initFn(identity)
-	})
-	return initedRows
+func (records Table[T]) Insert(rows ...T) (initedRows Table[T]) {
+	for _, v := range rows {
+		records = append(records, v)
+	}
+	return records
 }
 
 // Update  覆盖记录，如果存在则用新的值替换旧的。可以和Insert 结合使用，快速从全局数据中筛选部分子数据，同时保留不在全局数据内的记录。(如权限包中根据总权限回复指定部分权限数据，并保证全部记录能回复)
