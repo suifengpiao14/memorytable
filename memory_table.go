@@ -137,7 +137,7 @@ func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) stri
 	return ok
 }
 
-func (records Table[T]) Uniqueue(keyFn func(row T) (key string)) []T {
+func (records Table[T]) Uniqueue(keyFn func(row T) (key string)) Table[T] {
 	var result []T
 	m := make(map[string]struct{})
 	for _, v := range records {
@@ -174,8 +174,8 @@ func (records Table[T]) JsonMust() (s string) {
 	return s
 }
 
-func (records Table[T]) GroupBy(groupValue func(row T) (key string)) map[string][]T {
-	m := make(map[string][]T)
+func (records Table[T]) GroupBy(groupValue func(row T) (key string)) map[string]Table[T] {
+	m := make(map[string]Table[T])
 	for _, v := range records {
 		groupVal := groupValue(v)
 		if _, ok := m[groupVal]; !ok {
@@ -260,7 +260,7 @@ func (records Table[T]) IsEmpty() (yes bool) {
 	return len(records) == 0
 }
 
-func (records Table[T]) Where(fn func(record T) bool) (sub []T) {
+func (records Table[T]) Where(fn func(record T) bool) (sub Table[T]) {
 	sub = make([]T, 0)
 	for _, v := range records {
 		if fn(v) {
@@ -271,11 +271,11 @@ func (records Table[T]) Where(fn func(record T) bool) (sub []T) {
 }
 
 // Deprecated: Use Where instead.
-func (records Table[T]) Filter(fn func(record T) bool) (sub []T) {
+func (records Table[T]) Filter(fn func(record T) bool) (sub Table[T]) {
 	return records.Where(fn)
 }
 
-func (records Table[T]) FilterEmpty() []T {
+func (records Table[T]) FilterEmpty() Table[T] {
 	return records.Filter(func(one T) bool {
 		switch v := any(one).(type) {
 		case string, *string:
@@ -305,7 +305,7 @@ func (records Table[T]) Walk(fn func(one *T, index int) (err error)) (err error)
 	return nil
 }
 
-func (records Table[T]) Reverse(arr []T) (reversed []T) {
+func (records Table[T]) Reverse(arr []T) (reversed Table[T]) {
 	reversed = make([]T, 0)
 	for i := len(arr) - 1; i >= 0; i-- {
 		reversed = append(reversed, arr[i])
