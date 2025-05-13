@@ -46,10 +46,23 @@ func (records Table[T]) Set(identityFn func(t T) (identity string), moreTableRow
 }
 
 // Insert 批量生成记录
-func (records Table[T]) Insert(rows ...T) (initedRows Table[T]) {
-	for _, v := range rows {
-		records = append(records, v)
+func (records Table[T]) Insert(row T, index int) (initedRows Table[T]) {
+
+	// 确保index是有效的
+	if index <= 0 {
+		records = append([]T{row}, records...)
+		return records
 	}
+	if index >= len(records) {
+		records = append(records, row)
+		return records
+	}
+	// 将切片分为两部分，插入a到index的位置
+	befor := records[:index]
+	after := records[index:]
+	befor = append(befor, row)
+	befor = append(befor, after...)
+	records = befor
 	return records
 }
 
