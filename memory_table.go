@@ -86,7 +86,7 @@ func (records Table[T]) Update(identityFn func(t T) (identity string), valueTabl
 // Intersection 返回两个集合的交集
 func (records Table[T]) Intersection(seconds Table[T], identityFn func(row T) string) Table[T] {
 	secondMap := seconds.Map(identityFn)
-	var result []T
+	result := make([]T, 0)
 	for _, v := range records {
 		key := identityFn(v)
 		if _, ok := secondMap[key]; ok {
@@ -101,7 +101,7 @@ func (records Table[T]) Diff(subtrahend Table[T], identityFn func(row T) string)
 		key := identityFn(v)
 		secondMap[key] = struct{}{}
 	}
-	var result []T
+	result := make([]T, 0)
 	for _, v := range records {
 		key := identityFn(v)
 		if _, ok := secondMap[key]; !ok {
@@ -330,7 +330,7 @@ func (records Table[T]) Reverse(arr []T) (reversed Table[T]) {
 type RecordsColumn[T any, V any] []T
 
 func (records RecordsColumn[T, V]) Column(fn func(row T) V) []V {
-	var result []V
+	result := make([]V, 0)
 	for _, row := range records {
 		result = append(result, fn(row))
 	}
@@ -346,14 +346,14 @@ func (records RecordsColumn[T, V]) Map(fn func(one T) (value V)) (values []V) {
 }
 
 func Column[T, V any](records []T, fn func(row T) (value V)) []V {
-	var result []V
+	result := make([]V, 0)
 	for _, row := range records {
 		result = append(result, fn(row))
 	}
 	return result
 }
 func Map[T, V any](records []T, fn func(row T) (value V)) []V {
-	var result []V
+	result := make([]V, 0)
 	for _, row := range records {
 		result = append(result, fn(row))
 	}
