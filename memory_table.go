@@ -151,7 +151,7 @@ func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) stri
 }
 
 func (records Table[T]) Uniqueue(keyFn func(row T) (key string)) Table[T] {
-	var result []T
+	result := make([]T, 0)
 	m := make(map[string]struct{})
 	for _, v := range records {
 		key := keyFn(v)
