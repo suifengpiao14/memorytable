@@ -144,7 +144,7 @@ func (records Table[T]) HasIntersection(seconds Table[T], identityFn func(row T)
 }
 
 // IsSubsetTo 判断records是否为fullSet的子集 ,增加是否为空集合返回，方便提示调用方考虑空集情况
-func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) string) (isSubSet bool, IsEmptySet bool) {
+func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) string) (isSubSet bool, isEmptySet bool) {
 	if len(records) == 0 {
 		return true, true
 	}
