@@ -143,11 +143,14 @@ func (records Table[T]) HasIntersection(seconds Table[T], identityFn func(row T)
 	return false
 }
 
-// IsSubsetTo 判断records是否为fullSet的子集
-func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) string) bool {
+// IsSubsetTo 判断records是否为fullSet的子集 ,增加是否为空集合返回，方便提示调用方考虑空集情况
+func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) string) (isSubSet bool, IsEmptySet bool) {
+	if len(records) == 0 {
+		return true, true
+	}
 	inter := records.Intersection(fullSet, identityFn)
 	ok := len(inter) == len(records)
-	return ok
+	return ok, false
 }
 
 func (records Table[T]) Uniqueue(keyFn func(row T) (key string)) Table[T] {
