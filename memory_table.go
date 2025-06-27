@@ -199,8 +199,9 @@ func (records Table[T]) JsonMust() (s string) {
 	return s
 }
 
-func (records Table[T]) GroupBy(groupValue func(row T) (key string)) map[string]Table[T] {
-	m := make(map[string]Table[T])
+// GroupBy 分组，返回map[string][]T 这里返回map[string]Table[T]不实用,实际场景多需要map[string][]T 格式，另外 map[string][]T 格式遍历时很方便转为 Table[T] (其它函数返回 Table[T] 是方便链式调用，该函数不能参与链式调用)
+func (records Table[T]) GroupBy(groupValue func(row T) (key string)) map[string][]T {
+	m := make(map[string][]T)
 	for _, v := range records {
 		groupVal := groupValue(v)
 		if _, ok := m[groupVal]; !ok {
