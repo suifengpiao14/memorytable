@@ -25,8 +25,15 @@ func (records Table[T]) Count() int {
 	return len(records)
 }
 
+// Deprecated: 请使用 ToSliceWithEmpty
 func (records Table[T]) ToSlice() []T {
 	return records
+}
+
+// ToSliceWithEmpty 返回切片和是否为空，增加返回是否为空值，有利于提醒使用者检查是否为空，避免不必要的错误。
+func (records Table[T]) ToSliceWithEmpty() (arr []T, isEmpty bool) {
+	isEmpty = len(records) == 0
+	return records, isEmpty
 }
 
 // Set 存在则更新，不存在则插入
