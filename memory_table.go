@@ -91,7 +91,10 @@ func (records Table[T]) Update(identityFn func(t T) (identity string), valueTabl
 }
 
 // Intersection 返回两个集合的交集
-func (records Table[T]) Intersection(seconds Table[T], identityFn func(row T) string) Table[T] {
+func (records Table[T]) Intersection(seconds Table[T], identityFn func(row T) string) (intersection Table[T], isEmptySet bool) {
+	if len(records) == 0 || len(seconds) == 0 {
+		return intersection, true // 从数学集合角度，空集与任何集合的交集都是空集
+	}
 	secondMap := seconds.Map(identityFn)
 	result := make([]T, 0)
 	for _, v := range records {
@@ -100,7 +103,7 @@ func (records Table[T]) Intersection(seconds Table[T], identityFn func(row T) st
 			result = append(result, v)
 		}
 	}
-	return result
+	return result, false
 }
 func (records Table[T]) Diff(subtrahend Table[T], identityFn func(row T) string) Table[T] {
 	secondMap := make(map[string]struct{})
@@ -139,15 +142,27 @@ func (records Table[T]) HasDiff(subtrahend Table[T], identityFn func(row T) stri
 	}
 	return false
 }
-func (records Table[T]) HasIntersection(seconds Table[T], identityFn func(row T) string) bool {
+func (records Table[T]) HasIntersection(seconds Table[T], identityFn func(row T) string) (intersection bool, isEmptySet bool) {
+	if len(records) == 0 || len(seconds) == 0 {
+		return true, true // 从数学集合角度，空集与任何集合的交集都是空集，所以这里返回true,true
+	}
 	secondMap := seconds.Map(identityFn)
 	for _, v := range records {
 		key := identityFn(v)
 		if _, ok := secondMap[key]; ok {
-			return true
+			return true, false
 		}
 	}
-	return false
+	return false, false
+}
+
+func (records Table[T]) HasIntersectionExceptEmptySet(seconds Table[T], identityFn func(row T) string) (intersection bool) {
+	intersection, isEmptySet := records.HasIntersection(seconds, identityFn)
+	if isEmptySet {
+		intersection = false // 实际编程中,空交集往往和没有交集归为一类，这里返回false
+
+	}
+	return intersection
 }
 
 // IsSubsetTo 判断records是否为fullSet的子集 ,增加是否为空集返回，方便提示使用者考虑空集情况
@@ -155,7 +170,7 @@ func (records Table[T]) IsSubsetTo(fullSet Table[T], identityFn func(row T) stri
 	if len(records) == 0 {
 		return true, true
 	}
-	inter := records.Intersection(fullSet, identityFn)
+	inter, _ := records.Intersection(fullSet, identityFn)
 	ok := len(inter) == len(records)
 	return ok, false
 }
@@ -165,7 +180,7 @@ func (records Table[T]) IsSubset(subSet Table[T], identityFn func(row T) string)
 	if len(subSet) == 0 {
 		return true, true
 	}
-	inter := records.Intersection(subSet, identityFn)
+	inter, _ := records.Intersection(subSet, identityFn)
 	ok := len(inter) == len(subSet)
 	return ok, false
 }
