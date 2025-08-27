@@ -394,3 +394,16 @@ func Map[T, V any](records []T, fn func(row T) (value V)) []V {
 	}
 	return result
 }
+
+// MapWithFilter 过滤掉不满足条件的记录，只返回满足条件的结果。比如 strings.Split 返回的切片中，过滤掉空字符串。
+
+func MapWithFilter[T, V any](records []T, fn func(row T) (value V, ok bool)) []V {
+	result := make([]V, 0)
+	for _, row := range records {
+		v, ok := fn(row)
+		if ok {
+			result = append(result, v)
+		}
+	}
+	return result
+}
