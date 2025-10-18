@@ -196,6 +196,28 @@ func (records Table[T]) Uniqueue(keyFn func(row T) (key string)) Table[T] {
 	}
 	return result
 }
+
+func (records Table[T]) IsEqualWithUniqueue(second Table[T], identityFn func(row T) string) bool {
+	m1 := make(map[string]struct{})
+	m2 := make(map[string]struct{})
+	for _, v := range records {
+		key := identityFn(v)
+		m1[key] = struct{}{}
+	}
+	for _, v := range second {
+		key := identityFn(v)
+		m2[key] = struct{}{}
+	}
+	if len(m1) != len(m2) {
+		return false
+	}
+	for k := range m1 {
+		if _, ok := m2[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
 func (records Table[T]) Sum(sumFn func(row T) (number int64)) (sum int64) {
 	for _, v := range records {
 		sum += sumFn(v)
