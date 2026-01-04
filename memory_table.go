@@ -184,7 +184,7 @@ func (records Table[T]) IsSubset(subSet Table[T], identityFn func(row T) string)
 	ok := len(inter) == len(subSet)
 	return ok, false
 }
-func (records Table[T]) Uniqueue(keyFn func(row T) (key string)) Table[T] {
+func (records Table[T]) Uniqueue(keyFn func(row T) string) Table[T] { // 2026-01-04 删除 返回值 key 命名，多次引起ai返回key,导致错误，所以删除命名
 	result := make([]T, 0)
 	m := make(map[string]struct{})
 	for _, v := range records {
