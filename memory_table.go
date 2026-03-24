@@ -185,21 +185,24 @@ func (records Table[T]) IsSubset(subSet Table[T], identityFn func(row T) string)
 	return ok, false
 }
 func (records Table[T]) Uniqueue(keyFn func(row T) string) Table[T] { // 2026-01-04 删除 返回值 key 命名，多次引起ai返回key,导致错误，所以删除命名
-	result := make([]T, 0)
-	m := make(map[string]struct{})
+	var emptyStruct = struct{}{}
+	length := len(records)
+	result := make([]T, 0, length)
+	m := make(map[string]struct{}, length)
 	for _, v := range records {
 		key := keyFn(v)
 		if _, ok := m[key]; !ok {
-			m[key] = struct{}{}
+			m[key] = emptyStruct
 			result = append(result, v)
 		}
 	}
+	result = append([]T{}, result...)
 	return result
 }
 
 func (records Table[T]) IsEqualWithUniqueue(second Table[T], identityFn func(row T) string) bool {
-	m1 := make(map[string]struct{})
-	m2 := make(map[string]struct{})
+	m1 := make(map[string]struct{}, len(records))
+	m2 := make(map[string]struct{}, len(second))
 	for _, v := range records {
 		key := identityFn(v)
 		m1[key] = struct{}{}
